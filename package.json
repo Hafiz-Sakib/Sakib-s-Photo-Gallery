@@ -4,9 +4,10 @@
  "version": "1.0.0",
  "type": "module",
  "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview"
+  "dev": "node scripts/convert-heic.mjs && vite",
+  "build": "node scripts/convert-heic.mjs && vite build",
+  "preview": "vite preview",
+  "convert": "node scripts/convert-heic.mjs"
  },
  "dependencies": {
   "@gsap/react": "^2.1.2",
@@ -25,6 +26,7 @@
   "@tailwindcss/vite": "^4.0.0",
   "@vitejs/plugin-react": "^4.3.4",
   "tailwindcss": "^4.0.0",
-  "vite": "^6.0.1"
+  "vite": "^6.0.1",
+  "heic-convert": "^2.1.0"
  }
 }
