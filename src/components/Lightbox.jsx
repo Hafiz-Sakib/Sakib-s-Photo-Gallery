@@ -16,11 +16,16 @@ export function Lightbox({ items, index, onClose, onChange }) {
     return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ""; };
   }, [open, index, n, onClose, onChange]);
 
+  useEffect(() => { // preload the next/previous full image so arrows feel instant
+    if (!open || n < 2) return;
+    [index + 1, index - 1].forEach((k) => { const it = items[(k + n) % n]; if (it) new Image().src = it.full || it.src; });
+  }, [open, index, n, items]);
+
   return (
     <AnimatePresence>
       {open && (
         <motion.div className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-          <motion.img key={index} src={items[index].src} alt={items[index].alt} className="max-h-[88vh] max-w-full rounded-lg object-contain"
+          <motion.img key={index} src={items[index].full || items[index].src} alt={items[index].alt} className="max-h-[88vh] max-w-full rounded-lg object-contain"
             initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} onClick={(e) => e.stopPropagation()} />
           <p className="absolute bottom-4 left-0 right-0 text-center text-sm text-white/80">{items[index].title} · {index + 1}/{n}</p>
           <button aria-label="Close" onClick={onClose} className="absolute right-4 top-4 h-10 w-10 rounded-full bg-white/10 text-xl text-white hover:bg-white/20">×</button>

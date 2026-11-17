@@ -21,7 +21,7 @@ export function Showcase({ items, onOpen }) {
       <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
         {items.map((it, k) => (
           <button key={it.src} onClick={() => setI(k)} className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg ring-2 transition ${k === i ? "ring-zinc-900 dark:ring-white" : "ring-transparent opacity-60 hover:opacity-100"}`}>
-            <img src={it.src} alt="" loading="lazy" className="h-full w-full object-cover" />
+            <img src={it.thumb || it.src} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
           </button>
         ))}
       </div>

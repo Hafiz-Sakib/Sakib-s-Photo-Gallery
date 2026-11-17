@@ -80,6 +80,11 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
   const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
   const [view, setView] = React.useState({ w: 0, h: 0 });
   const [ratios, setRatios] = React.useState({});
+  const known = React.useMemo(() => { // ratios already known from the gallery data (no need to download images to measure them)
+    const m = {};
+    items.forEach((it) => { if (it.w && it.h) m[srcOf(it)] = it.w / it.h; });
+    return m;
+  }, [items, srcOf]);
 
   const cam = React.useRef({ x: 0, tx: 0, v: 0, time: 0, phase: 0 });
   const band = React.useRef({ x: 0, v: 0 });
@@ -119,6 +124,7 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
   React.useEffect(() => {
     let dead = false;
     items.forEach((it) => {
+      if (it.w && it.h) return;
       const src = srcOf(it);
       const img = new Image();
       img.decoding = "async";
@@ -278,7 +284,7 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
 
   // Cover-crop geometry for one image: scaled size and the x offset that centres on `focusX`.
   const fit = (src) => {
-    const r = ratios[src] || cardWidth / cardHeight;
+    const r = ratios[src] || known[src] || cardWidth / cardHeight;
     const wide = r >= cardWidth / cardHeight;
     const w = wide ? cardHeight * r : cardWidth;
     const h = wide ? cardHeight : cardWidth / r;

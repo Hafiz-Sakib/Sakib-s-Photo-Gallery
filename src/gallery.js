@@ -1,24 +1,18 @@
-// Every image dropped into src/gallery (any sub-folder) shows up automatically. No code changes needed.
-// On `npm run dev` they are renamed 1, 2, 3 ... by capture date (see scripts/prepare-gallery.mjs).
-// Both lower and UPPER case extensions are matched.
-const files = import.meta.glob("/src/gallery/**/*.{jpg,jpeg,jpe,jfif,pjpeg,pjp,png,apng,gif,webp,avif,svg,bmp,ico,cur,tif,tiff,heic,heif,JPG,JPEG,JPE,JFIF,PJPEG,PJP,PNG,APNG,GIF,WEBP,AVIF,SVG,BMP,ICO,CUR,TIF,TIFF,HEIC,HEIF}", { eager: true, query: "?url", import: "default" });
-
+// Photos live in public/gallery/{full,medium,thumb}/N.webp and are listed in gallery-meta.json
+// (written by scripts/prepare-gallery.mjs):  [[originalName, width, height, version], ...]  oldest -> newest,
+// entry i  <->  file (i + 1).webp.  Nothing is imported per image, so 500 photos cost ~12 KB of JS.
 import { site } from "./site";
-import names from "./gallery-names.json"; // written by scripts/prepare-gallery.mjs (1.jpg -> original file name)
+import meta from "./gallery-meta.json";
 
-const clean = (n) => n.replace(/\.[^.]+$/, "");
-const stem = (n) => clean(n).replace(/^\d+[-_\s]*/, "");
-const pretty = (n) => clean(n).replace(/[-_]+/g, " ").replace(/^\d+\s*/, "").trim();
-// Photos get renamed to 1, 2, 3 ..., so captions/titles come from the ORIGINAL file name kept in the manifest.
-const original = (p) => names.files?.[p.replace("/src/gallery/", "")]?.orig ?? p.split("/").pop();
+const BASE = import.meta.env.BASE_URL;
+const url = (tier, i, v) => `${BASE}gallery/${tier}/${i + 1}.webp?v=${v}`; // ?v= changes when the picture changes (safe immutable caching)
+const stem = (n) => n.replace(/^\d+[-_\s]*/, "");
+const pretty = (n) => n.replace(/[-_]+/g, " ").replace(/^\d+\s*/, "").trim();
 
-export const images = Object.entries(files)
-  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-  .map(([path, src]) => {
-    const o = original(path);
-    const [t, meta] = site.titles?.[stem(o)] || [];
-    // numeric-only names (e.g. 7.jpg, no known original) get a generic title
-    const title = t || (/^\d+$/.test(clean(o)) ? "Photo" : pretty(o)) || "Photo";
-    // href makes Ribbon / Tilt cards open the full image in a new tab.
-    return { src, title, label: title, alt: title, meta, caption: meta, href: src };
-  });
+export const images = meta.map(([orig, w, h, v], i) => {
+  const [t, m] = site.titles?.[stem(orig)] || [];
+  const title = t || (/^\d+$/.test(orig) ? "Photo" : pretty(orig)) || "Photo";
+  const full = url("full", i, v);
+  // src = medium (carousels etc.), thumb = grid/strips, full = lightbox / open in new tab
+  return { src: url("medium", i, v), thumb: url("thumb", i, v), full, w, h, title, label: title, alt: title, meta: m, caption: m, href: full };
+});

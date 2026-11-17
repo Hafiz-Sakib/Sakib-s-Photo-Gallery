@@ -1,10 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { InfiniteGallery } from "motion-brew/infinite-gallery";
-import { DepthCarousel } from "motion-brew/depth-carousel";
-import { PrismCarousel } from "motion-brew/prism-carousel";
-import { ProjectIndex } from "motion-brew/project-index";
-import { DuoFlip } from "@/components/duo-flip";
 import { images } from "./gallery";
 import { site } from "./site";
 import { Icon } from "./components/icons";
@@ -13,8 +8,20 @@ import { useDark } from "./theme";
 import { Grid } from "./components/Grid";
 import { Showcase } from "./components/Showcase";
 import { Lightbox } from "./components/Lightbox";
-import { RibbonGallery } from "./components/RibbonGallery";
-import { TiltCarousel } from "./components/tilt-carousel";
+
+// Each style is its own chunk: three.js / gsap / motion-brew are only downloaded when that style is opened.
+const lazyNamed = (load, name) => lazy(() => load().then((m) => ({ default: m[name] })));
+const InfiniteGallery = lazyNamed(() => import("motion-brew/infinite-gallery"), "InfiniteGallery");
+const DepthCarousel = lazyNamed(() => import("motion-brew/depth-carousel"), "DepthCarousel");
+const PrismCarousel = lazyNamed(() => import("motion-brew/prism-carousel"), "PrismCarousel");
+const ProjectIndex = lazyNamed(() => import("motion-brew/project-index"), "ProjectIndex");
+const DuoFlip = lazyNamed(() => import("@/components/duo-flip"), "DuoFlip");
+const RibbonGallery = lazyNamed(() => import("./components/RibbonGallery"), "RibbonGallery");
+const TiltCarousel = lazyNamed(() => import("./components/tilt-carousel"), "TiltCarousel");
+
+// Grid and Showcase show every photo (lazy-loaded). The animated styles use only the newest FEATURED photos so 500 pictures never choke them.
+const FEATURED = 60;
+const featured = images.length > FEATURED ? images.slice(-FEATURED) : images;
 
 // Card sizes follow the width of the gallery box (the page is at most 1152px wide), so pictures never look small inside it.
 const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -26,8 +33,8 @@ const useWidth = () => {
 
 // To add a style: import it, add one entry here. `lightbox: true` = clicking a picture opens the full-size viewer.
 const STYLES = [
-  { id: "grid", name: "Grid", lightbox: true, render: (p) => <Grid {...p} /> },
-  { id: "showcase", name: "Showcase", lightbox: true, render: (p) => <Showcase {...p} /> },
+  { id: "grid", name: "Grid", all: true, lightbox: true, render: (p) => <Grid {...p} /> },
+  { id: "showcase", name: "Showcase", all: true, lightbox: true, render: (p) => <Showcase {...p} /> },
   { id: "duo", name: "Duo flip", frame: true, render: ({ items }) => <div className="mx-auto w-full px-4 py-16" style={{ maxWidth: "min(56rem, calc((100svh - 14rem) * 1.25))" }}><DuoFlip images={items} className="w-full" /></div> },
   { id: "ribbon", name: "Ribbon", frame: true, render: ({ items, dark, w }) => <RibbonGallery items={items} cardWidth={cl(Math.round(w * 0.22), 180, 290)} cardHeight={Math.round(cl(Math.round(w * 0.22), 180, 290) * 1.26)} label="Photo ribbon" dimColor={dark ? "rgb(14 15 26)" : "rgb(243 244 247)"} /> },
   { id: "tilt", name: "Tilt", frame: true, render: ({ items, w }) => <div className="py-14"><TiltCarousel items={items} cardWidth={cl(Math.round(w * 0.32), 230, 400)} cardHeight={Math.round(cl(Math.round(w * 0.32), 230, 400) * 0.66)} label="Photo carousel" /></div> },
@@ -47,6 +54,7 @@ export default function App() {
   const dark = useDark();
   const w = useWidth();
   const cur = STYLES.find((s) => s.id === style) || STYLES[0];
+  const list = cur.all ? images : featured;
   useEffect(() => { try { localStorage.setItem("gallery-style", cur.id); } catch {} }, [cur.id]);
   const close = useCallback(() => setOpen(null), []);
 
@@ -74,14 +82,17 @@ export default function App() {
       </header>
 
       {images.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-400/50 p-10 text-center text-zinc-500">No images yet. Put your photos in <code>src/gallery/</code>.</p>
+        <p className="rounded-2xl border border-dashed border-zinc-400/50 p-10 text-center text-zinc-500">No images yet. Put your photos in the <code>photos/</code> folder and run <code>npm run dev</code>.</p>
       ) : (
         <motion.section key={cur.id} aria-label={cur.name} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
           className={`relative isolate overflow-hidden rounded-[2rem] ${cur.frame ? "border border-ink/10 bg-surface/50" : ""}`}>
-          {cur.render({ items: images, onOpen: setOpen, dark, w })}
+          <Suspense fallback={<div className="grid h-[50vh] place-items-center text-sm text-ink/50">Loading…</div>}>
+            {cur.render({ items: list, onOpen: setOpen, dark, w })}
+          </Suspense>
         </motion.section>
       )}
-      {cur.lightbox && <Lightbox items={images} index={open} onClose={close} onChange={setOpen} />}
+      {!cur.all && images.length > FEATURED && <p className="mt-3 text-center text-sm text-ink/50">Showing the latest {FEATURED} of {images.length} photos. Grid and Showcase show all of them.</p>}
+      {cur.lightbox && <Lightbox items={list} index={open} onClose={close} onChange={setOpen} />}
 
       <footer className="mt-10 border-t border-ink/10 pb-2 pt-7 sm:mt-12 sm:pt-8">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
