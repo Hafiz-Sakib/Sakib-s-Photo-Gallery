@@ -63,8 +63,11 @@ export default function App() {
       <header className="mb-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-semibold sm:text-5xl">{site.name}</h1>
-            <p className="mt-2 max-w-xl text-base text-ink/70 sm:text-lg">{site.tagline}</p>
+            <h1 className="flex items-center gap-3 font-display text-3xl font-semibold sm:gap-4 sm:text-5xl">
+              <img src="/favicon.svg" alt="" width="48" height="48" className="h-9 w-9 shrink-0 rounded-[22%] sm:h-12 sm:w-12" />
+              <span>{site.title}</span>
+            </h1>
+            <p className="mt-2 max-w-xl text-base text-ink/70 sm:text-lg">{site.name} · {site.tagline}</p>
             <p className="mt-1 text-sm text-ink/50">{site.place}</p>
           </div>
           <ThemeToggle className="mt-1" />

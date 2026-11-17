@@ -37,3 +37,10 @@ To add or remove one, edit the `STYLES` list in `src/App.jsx`.
 ## Theme and fonts
 Day mode is the default; the sun/moon switch (top right) flips to night with a circular reveal and remembers the choice (`src/theme.js`).
 Fonts: Bricolage Grotesque (headings) and Figtree (text), self-hosted via @fontsource-variable.
+
+## PWA and title
+Title everywhere is "Sakib's Gallery" (`index.html`, `public/manifest.webmanifest`, `site.title` in `src/site.js`).
+Installable on Android/desktop (Chrome/Edge: install icon in the address bar) and iOS (Share -> Add to Home Screen).
+`public/sw.js` caches the app shell and every photo you open, so repeat visits and offline use are fast. Bump `VERSION` in it to reset caches.
+Icons: `public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `public/icons/` (192, 512, maskable 512).
+The service worker is registered only in `npm run build` / Vercel, not in `npm run dev`.
