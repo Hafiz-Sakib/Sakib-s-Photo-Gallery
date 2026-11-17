@@ -64,7 +64,7 @@ export default function App() {
   const close = useCallback(() => setOpen(null), []);
 
   return (
-    <main id="top" className="mx-auto max-w-6xl px-5 pb-4 pt-12 lg:pb-8">
+    <main id="top" className="mx-auto max-w-6xl px-5 pb-4 pt-4 sm:pt-12 lg:pb-8">
       <header className="mb-10">
         <div className="flex items-start justify-between gap-4">
           <div>
