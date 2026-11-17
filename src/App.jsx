@@ -19,7 +19,7 @@ import { TiltCarousel } from "./components/tilt-carousel";
 const STYLES = [
   { id: "grid", name: "Grid", lightbox: true, render: (p) => <Grid {...p} /> },
   { id: "showcase", name: "Showcase", lightbox: true, render: (p) => <Showcase {...p} /> },
-  { id: "duo", name: "Duo flip", frame: true, render: ({ items }) => <div className="mx-auto max-w-3xl px-2 py-14"><DuoFlip images={items} /></div> },
+  { id: "duo", name: "Duo flip", frame: true, render: ({ items }) => <div className="mx-auto w-full max-w-4xl px-4 py-16"><DuoFlip images={items} /></div> },
   { id: "ribbon", name: "Ribbon", frame: true, render: ({ items, dark }) => <RibbonGallery items={items} label="Photo ribbon" dimColor={dark ? "rgb(14 15 26)" : "rgb(243 244 247)"} /> },
   { id: "tilt", name: "Tilt", frame: true, render: ({ items }) => <div className="py-14"><TiltCarousel items={items} cardWidth={300} cardHeight={200} label="Photo carousel" /></div> },
   { id: "infinite", name: "Infinite", frame: true, render: ({ items }) => <InfiniteGallery items={items} className="h-[72vh] min-h-[420px]" /> },
@@ -42,7 +42,7 @@ export default function App() {
       <header className="mb-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-display text-4xl font-semibold sm:text-5xl">{site.name}</h1>
+            <h1 className="font-display text-3xl font-semibold sm:text-5xl">{site.name}</h1>
             <p className="mt-2 max-w-xl text-base text-ink/70 sm:text-lg">{site.tagline}</p>
             <p className="mt-1 text-sm text-ink/50">{site.place}</p>
           </div>
