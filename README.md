@@ -7,9 +7,9 @@ Vite + React 18 + Tailwind 4 + Motion Brew (npm `motion-brew`, MIT). Only a gall
     npm run build     # output in dist/
 
 ## Pictures (up to ~500, no database, hosted on Vercel, images in GitHub)
-1. Drop photos (any format, HEIC too) into `photos/`.
-2. Run `npm run dev` (or `npm run build`). `scripts/prepare-gallery.mjs`:
-   - converts HEIC, auto-rotates, strips GPS/EXIF, makes 3 WebP sizes in `public/gallery/{full,medium,thumb}/`
+1. Drop photos (any format, HEIC too) into the **`photos/`** folder (project root, next to `package.json`). If you paste them into `public/gallery/` (or `public/gallery/full/`) by mistake they are picked up too.
+2. Run `npm run dev` and leave it running: it starts the site AND watches `photos/`, so photos you add later are processed automatically and the page reloads. (`npm run photos` = process once, `npm run build` also processes first.) `scripts/prepare-gallery.mjs`:
+   - converts HEIC, auto-rotates, strips GPS/EXIF, makes 3 WebP sizes in `public/gallery/` (one flat folder: `7.webp`, `7-medium.webp`, `7-thumb.webp`)
    - renames ALL photos (old + new) oldest -> newest by capture date: `1.webp, 2.webp, ...` (EXIF date, else file modified time)
    - moves your untouched originals to `originals/` (backup)
    - prints the total size (keep it under ~95 MB: Vercel Hobby lists a 100 MB static-upload limit)
@@ -17,7 +17,7 @@ Vite + React 18 + Tailwind 4 + Motion Brew (npm `motion-brew`, MIT). Only a gall
 
 `photos/` and `originals/` are git-ignored. Vercel/CI skips the prepare step (it deploys what you committed).
 To change sizes/quality edit `TIERS` in `scripts/prepare-gallery.mjs`, then `npm run gallery:rebuild`.
-Delete a photo by deleting its files (full/medium/thumb) or just `public/gallery/full/N.webp`; the next run renumbers.
+Delete a photo by deleting `public/gallery/N.webp` (the -medium/-thumb files are cleaned up); the next run renumbers.
 Captions in `src/site.js` still match by the ORIGINAL file name.
 
 ## Your info
@@ -28,7 +28,7 @@ Grid, Showcase, Duo flip, Ribbon, Tilt, Infinite, Depth, Prism, Index.
 To add or remove one, edit the `STYLES` list in `src/App.jsx`.
 
 ## Structure
-    public/gallery/    generated images (full / medium / thumb)
+    public/gallery/    all generated images, one folder (N.webp, N-medium.webp, N-thumb.webp)
     src/gallery.js     builds the photo list from src/gallery-meta.json
     src/site.js        your info + captions
     src/App.jsx        style switcher + STYLES list

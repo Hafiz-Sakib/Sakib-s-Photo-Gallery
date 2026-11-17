@@ -1,8 +1,8 @@
-// Runs before `npm run dev` / `npm run build` (skipped on Vercel/CI: it deploys what is committed).
+// Called by `npm run dev` (scripts/dev.mjs, also watches photos/) and by `npm run build` (skipped on Vercel/CI: it deploys what is committed).
 //
 //   photos/            <- DROP any photo here (jpg png webp avif tiff gif svg HEIC ...). Not committed to git.
 //   originals/         <- your untouched originals are moved here after processing (backup, not committed).
-//   public/gallery/    <- generated + committed: full/ (1600px), medium/ (900px), thumb/ (400px), all WebP.
+//   public/gallery/    <- generated + committed, ONE flat folder: 7.webp (1600px), 7-medium.webp (900px), 7-thumb.webp (400px).
 //
 // What it does:
 //   1. HEIC/HEIF -> decoded to JPEG in memory (capture date read first, because conversion drops EXIF).
@@ -28,6 +28,7 @@ const BUDGET_MB = 95; // Vercel Hobby lists a 100 MB static-upload limit
 const START = 1;
 
 const INBOX = path.resolve("photos");
+const LEGACY = path.resolve("src/gallery"); // old location, still picked up
 const BACKUP = path.resolve("originals");
 const OUT = path.resolve("public/gallery");
 const STATE = path.resolve("scripts/gallery-state.json");
@@ -37,7 +38,7 @@ const HEIC = /\.(heic|heif)$/i;
 const REBUILD = process.argv.includes("--rebuild");
 
 const tierNames = Object.keys(TIERS);
-const file = (tier, name) => path.join(OUT, tier, `${name}.webp`);
+const file = (tier, name) => path.join(OUT, tier === "full" ? `${name}.webp` : `${name}-${tier}.webp`); // all in one folder
 const exists = (p) => fs.access(p).then(() => true, () => false);
 const sha1 = (b) => crypto.createHash("sha1").update(b).digest("hex");
 const natural = (a, b) => a.localeCompare(b, undefined, { numeric: true });
@@ -82,14 +83,22 @@ async function moveTo(src, dir) {
   catch { await fs.copyFile(src, dest); await fs.unlink(src); }
 }
 
-for (const t of tierNames) await fs.mkdir(path.join(OUT, t), { recursive: true });
+await fs.mkdir(OUT, { recursive: true });
 await fs.mkdir(INBOX, { recursive: true });
 await fs.mkdir(path.dirname(STATE), { recursive: true });
+
+// ---------- migrate the old layout (full/ medium/ thumb/ sub-folders) into the single folder ----------
+for (const t of tierNames) {
+  const dir = path.join(OUT, t);
+  if (!(await exists(dir))) continue;
+  for (const f of await fs.readdir(dir)) if (/\.webp$/.test(f) && !f.startsWith(".")) await fs.rename(path.join(dir, f), file(t, f.replace(/\.webp$/, "")));
+  console.log(`Migrated public/gallery/${t}/ into public/gallery/`); // the folder itself is only removed later if it is EMPTY (never deletes your files)
+}
 
 // ---------- --rebuild: put originals back in the inbox and start from scratch ----------
 if (REBUILD) {
   for (const f of await walk(BACKUP)) await moveTo(f, INBOX);
-  for (const t of tierNames) { await fs.rm(path.join(OUT, t), { recursive: true, force: true }); await fs.mkdir(path.join(OUT, t), { recursive: true }); }
+  for (const f of await fs.readdir(OUT)) if (f.endsWith(".webp")) await fs.rm(path.join(OUT, f), { force: true });
   await fs.rm(STATE, { force: true });
   console.log("Rebuild: originals moved back to photos/, generated images cleared.");
 }
@@ -106,14 +115,21 @@ for (const it of state.items) {
 const removed = state.items.length - kept.length;
 state.items = kept;
 
-// ---------- 2. process new photos from the inbox ----------
-const inbox = (await walk(INBOX)).filter((f) => ACCEPT.test(f)).sort(natural);
+// ---------- 2. process new photos ----------
+// Main inbox = photos/. Photos pasted by mistake into public/gallery (any sub-folder, e.g. public/gallery/full/)
+// or into the old src/gallery folder are picked up too, so it never matters where you drop them.
+const tracked = new Set(state.items.flatMap((it) => tierNames.map((t) => file(t, it.file))));
+const stray = [...(await walk(OUT)), ...(await walk(LEGACY))]
+  .filter((f) => ACCEPT.test(f) && !tracked.has(f) && !/-(medium|thumb)\.webp$/.test(f) && !path.basename(f).startsWith(".tmp_"));
+const inbox = [...(await walk(INBOX)), ...stray].filter((f) => ACCEPT.test(f)).sort((a, b) => natural(path.basename(a), path.basename(b)));
 const knownHashes = new Set(state.items.map((i) => i.hash));
 let added = 0, dupes = 0, failed = 0;
 if (inbox.length) console.log(`Processing ${inbox.length} new photo(s)...`);
 
+let n = 0;
 for (const f of inbox) {
   const name = path.basename(f);
+  n++;
   try {
     const raw = await fs.readFile(f);
     const hash = sha1(raw);
@@ -146,30 +162,44 @@ for (const f of inbox) {
     });
     knownHashes.add(hash);
     await moveTo(f, BACKUP); // only after everything was written successfully
-    added++; console.log("  ✓", name);
+    added++; console.log(`  ✓ [${n}/${inbox.length}]`, name);
   } catch (e) { failed++; console.error("  ✗", name, "-", e.message, "(left in photos/)"); }
 }
+
+// tidy: remove empty folders left behind in public/gallery (e.g. the old full/ folder)
+async function prune(dir) {
+  for (const e of await fs.readdir(dir, { withFileTypes: true })) if (e.isDirectory()) await prune(path.join(dir, e.name));
+  if (dir !== OUT && dir !== LEGACY && (await fs.readdir(dir)).length === 0) await fs.rmdir(dir);
+}
+await prune(OUT);
+if (await exists(LEGACY)) await prune(LEGACY);
 
 // ---------- 3. rename everything oldest -> newest: 1, 2, 3 ... ----------
 state.items.sort((a, b) => new Date(a.date) - new Date(b.date) || natural(a.orig, b.orig));
 const moves = state.items.map((it, i) => ({ it, to: String(START + i) })).filter((m) => m.it.file !== m.to);
 if (moves.length) {
   const token = crypto.randomBytes(4).toString("hex"); // two phases so 2->1 and 1->2 never collide
-  for (const [k, m] of moves.entries()) for (const t of tierNames) await fs.rename(file(t, m.it.file), path.join(OUT, t, `.tmp_${token}_${k}.webp`));
+  for (const [k, m] of moves.entries()) for (const t of tierNames) await fs.rename(file(t, m.it.file), path.join(OUT, `.tmp_${token}_${k}_${t}.webp`));
   for (const [k, m] of moves.entries()) {
-    for (const t of tierNames) await fs.rename(path.join(OUT, t, `.tmp_${token}_${k}.webp`), file(t, m.to));
+    for (const t of tierNames) await fs.rename(path.join(OUT, `.tmp_${token}_${k}_${t}.webp`), file(t, m.to));
     m.it.file = m.to;
   }
 }
 
+// sweep: numbered files in public/gallery that belong to no photo (leftovers) are deleted
+const live = new Set(state.items.flatMap((it) => tierNames.map((t) => path.basename(file(t, it.file)))));
+for (const f of await fs.readdir(OUT)) if (/^\d+(-medium|-thumb)?\.webp$/.test(f) && !live.has(f)) await fs.rm(path.join(OUT, f), { force: true });
+
 // ---------- 4. write data files ----------
 const line = (it) => "    " + JSON.stringify(it);
-await fs.writeFile(STATE, `{\n  "items": [\n${state.items.map(line).join(",\n")}\n  ]\n}\n`);
-await fs.writeFile(META, JSON.stringify(state.items.map((it) => [it.orig, it.w, it.h, it.v])) + "\n");
+const writeAtomic = async (p, text) => { await fs.writeFile(p + ".tmp", text); await fs.rename(p + ".tmp", p); };
+await writeAtomic(STATE, `{\n  "items": [\n${state.items.map(line).join(",\n")}\n  ]\n}\n`);
+await writeAtomic(META, JSON.stringify(state.items.map((it) => [it.orig, it.w, it.h, it.v])) + "\n");
 
 let bytes = 0;
 for (const it of state.items) for (const t of tierNames) bytes += (await fs.stat(file(t, it.file)).catch(() => ({ size: 0 }))).size;
 const mb = bytes / 1048576;
 if (!state.items.length) console.log("Gallery is empty. Drop photos into the photos/ folder.");
 else console.log(`Gallery: ${state.items.length} photo(s), ${mb.toFixed(1)} MB in public/gallery  (+${added} new, ${dupes} duplicate, ${removed} removed, ${moves.length} renamed, ${failed} failed)`);
+if (added) console.log("\nNext: git add public/gallery src/gallery-meta.json scripts/gallery-state.json && git commit -m \"photos\" && git push");
 if (mb > BUDGET_MB) console.warn(`! ${mb.toFixed(0)} MB is above the ~${BUDGET_MB} MB budget. Lower width/quality in TIERS (top of scripts/prepare-gallery.mjs) and run \`npm run gallery:rebuild\`.`);

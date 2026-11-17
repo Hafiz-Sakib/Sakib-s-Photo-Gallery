@@ -1,11 +1,11 @@
-// Photos live in public/gallery/{full,medium,thumb}/N.webp and are listed in gallery-meta.json
+// Photos live in ONE folder, public/gallery/: N.webp (full), N-medium.webp, N-thumb.webp and are listed in gallery-meta.json
 // (written by scripts/prepare-gallery.mjs):  [[originalName, width, height, version], ...]  oldest -> newest,
 // entry i  <->  file (i + 1).webp.  Nothing is imported per image, so 500 photos cost ~12 KB of JS.
 import { site } from "./site";
 import meta from "./gallery-meta.json";
 
 const BASE = import.meta.env.BASE_URL;
-const url = (tier, i, v) => `${BASE}gallery/${tier}/${i + 1}.webp?v=${v}`; // ?v= changes when the picture changes (safe immutable caching)
+const url = (tier, i, v) => `${BASE}gallery/${i + 1}${tier === "full" ? "" : "-" + tier}.webp?v=${v}`; // ?v= changes when the picture changes (safe immutable caching)
 const stem = (n) => n.replace(/^\d+[-_\s]*/, "");
 const pretty = (n) => n.replace(/[-_]+/g, " ").replace(/^\d+\s*/, "").trim();
 

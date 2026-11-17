@@ -4,11 +4,12 @@
  "version": "1.0.0",
  "type": "module",
  "scripts": {
-  "dev": "node scripts/prepare-gallery.mjs && vite",
+  "dev": "node scripts/dev.mjs",
   "build": "node scripts/prepare-gallery.mjs && vite build",
   "preview": "vite preview",
   "convert": "node scripts/prepare-gallery.mjs",
-  "gallery:rebuild": "node scripts/prepare-gallery.mjs --rebuild"
+  "gallery:rebuild": "node scripts/prepare-gallery.mjs --rebuild",
+  "photos": "node scripts/prepare-gallery.mjs"
  },
  "dependencies": {
   "@gsap/react": "^2.1.2",
