@@ -18,6 +18,7 @@ const PrismCarousel = lazyNamed(() => import("motion-brew/prism-carousel"), "Pri
 const DuoFlip = lazyNamed(() => import("./components/duo-flip"), "DuoFlip");
 const RibbonGallery = lazyNamed(() => import("./components/RibbonGallery"), "RibbonGallery");
 const TiltCarousel = lazyNamed(() => import("./components/tilt-carousel"), "TiltCarousel");
+const SpatialGallery = lazyNamed(() => import("motion-brew/spatial-gallery"), "SpatialGallery");
 
 // EVERY style shows EVERY photo, in a fresh random order each time the page loads and each time you switch style.
 // (Heavy styles only keep a few photos in memory at once, see the components, so hundreds of pictures stay smooth.)
@@ -27,6 +28,14 @@ const shuffle = (list) => { const r = list.slice(); for (let i = r.length - 1; i
 function PrismAll({ items }) {
   const cards = useMemo(() => items.map((i) => ({ label: "", image: i.src })), [items]);
   return <div className="prism-all"><PrismCarousel cards={cards} /></div>;
+}
+
+// Spatial keeps one texture per photo in GPU memory, so it flies through a random set of SPATIAL_MAX photos (taken from the
+// already shuffled list, so it is a different set every visit). Raise it for more photos, lower it if phones struggle.
+const SPATIAL_MAX = 64;
+function SpatialAll({ items }) {
+  const tunnel = useMemo(() => items.slice(0, SPATIAL_MAX).map((i) => ({ src: i.src, alt: i.alt, href: i.full || i.src })), [items]);
+  return <SpatialGallery className="h-[78dvh] min-h-[420px]" items={tunnel} radius={4.2} fog={1} linkTarget="_blank" />;
 }
 
 // Card sizes follow the width of the gallery box (the page is at most 1152px wide), so pictures never look small inside it.
@@ -47,6 +56,7 @@ const STYLES = [
   { id: "infinite", name: "Infinite", frame: true, render: ({ items }) => <InfiniteGallery items={items} showTitles={false} className="h-[72vh] min-h-[420px]" /> },
   { id: "depth", name: "Depth", frame: true, render: ({ items }) => <DepthCarousel items={items} className="h-[72vh] min-h-[420px]" /> },
   { id: "prism", name: "Prism", frame: true, render: ({ items }) => <PrismAll items={items} /> },
+  { id: "spatial", name: "Spatial", frame: true, render: ({ items }) => <SpatialAll items={items} /> },
 ];
 
 const year = new Date().getFullYear();

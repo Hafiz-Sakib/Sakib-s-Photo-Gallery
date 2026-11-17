@@ -4,7 +4,7 @@
 
 # Sakib's Gallery
 
-**A fast, installable photo gallery with 8 hand-tuned viewing styles, day/night theme and zero backend.**
+**A fast, installable photo gallery with 9 hand-tuned viewing styles, day/night theme and zero backend.**
 Drop in photos, run one command, and publish up to ~500 pictures on Vercel for free.
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
@@ -50,7 +50,7 @@ Drop in photos, run one command, and publish up to ~500 pictures on Vercel for f
 - **Random order**: photos are shuffled on every page load and every time you switch style, in every style.
 - **Every style shows every photo**: no style is limited to a sample, so all your pictures (400+) appear everywhere.
 - **Clean look**: no titles, file names or captions are shown anywhere, only the pictures.
-- **8 gallery styles** in one page: Grid, Showcase, Duo flip, Ribbon, Tilt, Infinite, Depth and Prism.
+- **9 gallery styles** in one page: Grid, Showcase, Duo flip, Ribbon, Tilt, Infinite, Depth, Prism and Spatial.
 - **Automatic photo pipeline**: HEIC support, auto-rotate, EXIF/GPS stripping, three WebP sizes, renamed oldest to newest by capture date.
 - **Scales to ~500 photos** with no database. The photo list is a tiny JSON file (about 12 KB of JS in total). Heavy styles load pictures only when they are about to be seen (Duo flip keeps just a few on the GPU, Ribbon and Infinite reuse a small set of cards, Tilt loads by distance).
 - **Full-size lightbox** for Grid and Showcase, with keyboard and swipe navigation.
@@ -72,6 +72,8 @@ Drop in photos, run one command, and publish up to ~500 pictures on Vercel for f
 | **Infinite** | Endless drifting wall of photos. A card gets the next photo each time it wraps around | all | no |
 | **Depth** | Depth-of-field carousel | all | no |
 | **Prism** | Rotating prism of cards | all | no |
+| **Spatial** | WebGL tunnel of photos you fly through. Uses a random 64 photos per visit (`SPATIAL_MAX` in `src/App.jsx`). Click opens the full photo in a new tab | 64 random | new tab |
+| **Spatial** | WebGL tunnel of photos you fly through. Uses a random 64 photos per visit (`SPATIAL_MAX` in `src/App.jsx`). Click opens the full photo in a new tab | 64 random | new tab |
 
 Every style gets the same photo list in a fresh random order, so no photo is ever left out. The animated styles stay smooth with hundreds of photos because they never hold all of them in memory at once.
 
