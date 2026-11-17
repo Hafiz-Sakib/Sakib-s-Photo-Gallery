@@ -7,6 +7,8 @@ import { ProjectIndex } from "motion-brew/project-index";
 import { DuoFlip } from "motion-brew/duo-flip";
 import { images } from "./gallery";
 import { site } from "./site";
+import ThemeToggle from "./components/ThemeToggle";
+import { useDark } from "./theme";
 import { Grid } from "./components/Grid";
 import { Showcase } from "./components/Showcase";
 import { Lightbox } from "./components/Lightbox";
@@ -18,7 +20,7 @@ const STYLES = [
   { id: "grid", name: "Grid", lightbox: true, render: (p) => <Grid {...p} /> },
   { id: "showcase", name: "Showcase", lightbox: true, render: (p) => <Showcase {...p} /> },
   { id: "duo", name: "Duo flip", render: ({ items }) => <div className="mx-auto max-w-3xl py-6"><DuoFlip images={items} /></div> },
-  { id: "ribbon", name: "Ribbon", render: ({ items }) => <RibbonGallery items={items} label="Photo ribbon" /> },
+  { id: "ribbon", name: "Ribbon", render: ({ items, dark }) => <RibbonGallery items={items} label="Photo ribbon" dimColor={dark ? "rgb(14 15 26)" : "rgb(243 244 247)"} /> },
   { id: "tilt", name: "Tilt", render: ({ items }) => <div className="py-10"><TiltCarousel items={items} cardWidth={300} cardHeight={200} label="Photo carousel" /></div> },
   { id: "infinite", name: "Infinite", render: ({ items }) => <InfiniteGallery items={items} className="h-[78vh] min-h-[420px] overflow-hidden rounded-3xl" /> },
   { id: "depth", name: "Depth", render: ({ items }) => <DepthCarousel items={items} className="h-[78vh] min-h-[420px]" /> },
@@ -30,6 +32,7 @@ const STYLES = [
 export default function App() {
   const [style, setStyle] = useState(() => { try { return localStorage.getItem("gallery-style"); } catch { return null; } });
   const [open, setOpen] = useState(null);
+  const dark = useDark();
   const cur = STYLES.find((s) => s.id === style) || STYLES[0];
   useEffect(() => { try { localStorage.setItem("gallery-style", cur.id); } catch {} }, [cur.id]);
   const close = useCallback(() => setOpen(null), []);
@@ -42,21 +45,24 @@ export default function App() {
           <p className="mt-1 text-zinc-500">{site.tagline}</p>
           <p className="text-sm text-zinc-400">{site.place}</p>
         </div>
-        <nav aria-label="Gallery style" className="flex max-w-full flex-wrap gap-1 rounded-3xl bg-zinc-200/70 p-1 dark:bg-zinc-800/70">
+        <div className="flex items-center gap-3">
+        <nav aria-label="Gallery style" className="flex max-w-full flex-wrap gap-1 rounded-3xl bg-ink/[0.07] p-1">
           {STYLES.map((s) => (
             <button key={s.id} onClick={() => setStyle(s.id)} className="relative rounded-full px-4 py-1.5 text-sm font-medium">
-              {cur.id === s.id && <motion.span layoutId="pill" className="absolute inset-0 rounded-full bg-white shadow-md dark:bg-zinc-600" transition={{ type: "spring", stiffness: 500, damping: 34 }} />}
+              {cur.id === s.id && <motion.span layoutId="pill" className="absolute inset-0 rounded-full bg-surface shadow-md" transition={{ type: "spring", stiffness: 500, damping: 34 }} />}
               <span className="relative">{s.name}</span>
             </button>
           ))}
         </nav>
+        <ThemeToggle />
+        </div>
       </header>
 
       {images.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-zinc-400/50 p-10 text-center text-zinc-500">No images yet. Put your photos in <code>src/gallery/</code>.</p>
       ) : (
         <motion.div key={cur.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          {cur.render({ items: images, onOpen: setOpen })}
+          {cur.render({ items: images, onOpen: setOpen, dark })}
         </motion.div>
       )}
       {cur.lightbox && <Lightbox items={images} index={open} onClose={close} onChange={setOpen} />}

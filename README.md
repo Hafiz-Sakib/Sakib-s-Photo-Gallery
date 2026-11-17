@@ -23,3 +23,7 @@ To add or remove one, edit the `STYLES` list in `src/App.jsx`.
     src/site.js        your info + captions
     src/App.jsx        style switcher + STYLES list
     src/components/    Grid, Showcase, Lightbox, RibbonGallery, tilt-carousel
+
+## Theme and fonts
+Day mode is the default; the sun/moon switch (top right) flips to night with a circular reveal and remembers the choice (`src/theme.js`).
+Fonts: Bricolage Grotesque (headings) and Figtree (text), self-hosted via @fontsource-variable.
