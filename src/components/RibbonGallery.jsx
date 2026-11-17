@@ -424,7 +424,6 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
                 className="pointer-events-none absolute block whitespace-nowrap text-[14px] font-medium leading-none tracking-tight text-white will-change-transform [text-shadow:0_1px_8px_rgba(0,0,0,0.45)]"
                 style={{ left: -sliceW / 2 - TITLE_SLICE * sliceW + 18, top: cardHeight / 2 - 34, visibility: "hidden" }}
               >
-                {item.title}
               </span>
               <span
                 ref={(el) => void (arrows.current[k] = el)}

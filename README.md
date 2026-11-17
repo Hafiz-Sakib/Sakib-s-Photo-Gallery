@@ -49,6 +49,8 @@ Drop in photos, run one command, and publish up to ~500 pictures on Vercel for f
 
 ## Features
 
+- **Random order**: photos are shuffled on every page load, in every style.
+- **Clean look**: no titles, file names or captions are shown anywhere, only the pictures.
 - **8 gallery styles** in one page: Grid, Showcase, Duo flip, Ribbon, Tilt, Infinite, Depth and Prism.
 - **Automatic photo pipeline**: HEIC support, auto-rotate, EXIF/GPS stripping, three WebP sizes, renamed oldest to newest by capture date.
 - **Scales to ~500 photos** with no database. The photo list is a tiny JSON file (about 12 KB of JS in total), and images are lazy-loaded.
@@ -65,14 +67,14 @@ Drop in photos, run one command, and publish up to ~500 pictures on Vercel for f
 | --- | --- | :---: | :---: |
 | **Grid** | Responsive thumbnail grid | all | yes |
 | **Showcase** | Large featured layout | all | yes |
-| **Duo flip** | WebGL liquid-glass page turn. Click, drag or use the arrow keys. Every picture is shown **in full**, never cropped | latest 60 | no |
-| **Ribbon** | Tilted ribbon of cards you can scroll through | latest 60 | no |
-| **Tilt** | 3D tilt carousel | latest 60 | no |
-| **Infinite** | Endless drifting wall of photos | latest 60 | no |
-| **Depth** | Depth-of-field carousel | latest 60 | no |
-| **Prism** | Rotating prism of cards | latest 60 | no |
+| **Duo flip** | WebGL liquid-glass page turn. Click, drag or use the arrow keys. Every picture is shown **in full**, never cropped | random 60 | no |
+| **Ribbon** | Tilted ribbon of cards you can scroll through | random 60 | no |
+| **Tilt** | 3D tilt carousel | random 60 | no |
+| **Infinite** | Endless drifting wall of photos | random 60 | no |
+| **Depth** | Depth-of-field carousel | random 60 | no |
+| **Prism** | Rotating prism of cards | random 60 | no |
 
-Grid and Showcase show every photo. The animated styles use the newest `FEATURED` photos (60 by default) so a library of 500 pictures never slows them down. Change it in `src/App.jsx`.
+Grid and Showcase show every photo. The animated styles use `FEATURED` random photos (60 by default) so a library of 500 pictures never slows them down. Change it in `src/App.jsx`.
 
 ### About Duo flip
 
@@ -165,10 +167,10 @@ gallery-site/
 │   │   ├── Lightbox.jsx          # full-size viewer for Grid and Showcase
 │   │   ├── ThemeToggle.jsx       # sun / moon switch
 │   │   └── icons.jsx             # social and UI icons
-│   ├── App.jsx                   # page layout, style switcher and the STYLES list
-│   ├── gallery.js                # builds the photo list from gallery-meta.json
+│   ├── App.jsx                   # page layout, random shuffle, style switcher and the STYLES list
+│   ├── gallery.js                # builds the photo list from gallery-meta.json (no titles or captions)
 │   ├── gallery-meta.json         # generated: [[originalName, width, height, version], ...]
-│   ├── site.js                   # your name, bio, links and optional captions
+│   ├── site.js                   # your name, bio and social links
 │   ├── theme.js                  # day / night logic with circular reveal
 │   ├── index.css                 # Tailwind, theme tokens, view-transition rules
 │   └── main.jsx                  # app entry and service worker registration
@@ -193,7 +195,6 @@ gallery-site/
 | `name`, `full`, `tagline`, `place`, `bio` | Header and footer text |
 | `email` | Contact details |
 | `social` | Footer icon links (GitHub, LinkedIn, Codeforces, LeetCode, X, Instagram, Facebook, WhatsApp) |
-| `titles` | Optional captions: `"file-name": ["Title", "small line"]`. Match by original file name, without extension and without a `01-` prefix. Files not listed use their file name |
 
 ### Page title and PWA name
 
@@ -204,7 +205,7 @@ Set the same title in `index.html`, `public/manifest.webmanifest` and `site.titl
 In `src/App.jsx`:
 
 ```js
-const FEATURED = 60; // newest N photos for Duo flip, Ribbon, Tilt, Infinite, Depth, Prism
+const FEATURED = 60; // random N photos for Duo flip, Ribbon, Tilt, Infinite, Depth, Prism
 ```
 
 ---

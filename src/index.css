@@ -41,3 +41,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .theme-fade, .theme-fade *, .theme-fade *::before, .theme-fade *::after {
   transition: background-color .45s ease, color .45s ease, border-color .45s ease, fill .45s ease, stroke .45s ease, box-shadow .45s ease !important;
 }
+
+/* No captions in any gallery style: hide the empty caption boxes that Depth and Prism still draw */
+.clean-captions figcaption:empty { display: none; }
+.clean-captions :is(div, span):has(> .truncate:empty) { display: none; }

@@ -173,7 +173,6 @@ export function TiltCarousel({
           >
             {fill && <img src={it.thumb || src} alt="" aria-hidden draggable={false} decoding="async" loading="lazy" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-80 blur-2xl" />}
             <img src={src} alt="" draggable={false} decoding="async" loading={i < 4 ? "eager" : "lazy"} className={`relative h-full w-full ${fill ? "object-contain" : "object-cover"}`} />
-            <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-4 pb-3 pt-10 text-[13px] font-semibold leading-none text-white">{it.title}</span>
           </Tag>
         );
       })}

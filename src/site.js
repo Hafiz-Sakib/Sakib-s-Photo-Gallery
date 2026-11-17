@@ -17,19 +17,4 @@ export const site = {
     { name: "Facebook", href: "https://www.facebook.com/Sakib1056" },
     { name: "WhatsApp", href: "https://api.whatsapp.com/send?phone=+8801516195904" },
   ],
-  // Optional captions, keyed by file name (no extension, no 01- prefix): [title, small line].
-  // Files not listed here just use their file name as the title.
-  titles: {
-    "profile": ["Hafiz Sakib", "Portrait"],
-    "cp-pathshala": ["CP Pathshala", "Education PWA"],
-    "algoviz": ["AlgoViz", "Algorithm visualizer"],
-    "nova": ["NOVA MathPlot", "Scientific visualization"],
-    "subcalc": ["SubCalc Pro", "Networking tool"],
-    "fifa": ["FIFA World Cup 2026", "Sports tracker"],
-    "bpdb": ["BPDB Token Helper", "Utility, Bengali UI"],
-    "sababa": ["Sababa Tours", "Travel platform"],
-    "bagsq": ["BagsQ", "SaaS dashboard"],
-    "odyssey": ["Odyssey Travel Agency", "Full-stack web app"],
-    "blood": ["Blood Donation Management", "Community platform"],
-  },
 };

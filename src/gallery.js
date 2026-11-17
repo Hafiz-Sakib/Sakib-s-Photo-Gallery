@@ -1,18 +1,14 @@
 // Photos live in ONE folder, public/gallery/: N.webp (full), N-medium.webp, N-thumb.webp and are listed in gallery-meta.json
 // (written by scripts/prepare-gallery.mjs):  [[originalName, width, height, version], ...]  oldest -> newest,
 // entry i  <->  file (i + 1).webp.  Nothing is imported per image, so 500 photos cost ~12 KB of JS.
-import { site } from "./site";
 import meta from "./gallery-meta.json";
 
 const BASE = import.meta.env.BASE_URL;
 const url = (tier, i, v) => `${BASE}gallery/${i + 1}${tier === "full" ? "" : "-" + tier}.webp?v=${v}`; // ?v= changes when the picture changes (safe immutable caching)
-const stem = (n) => n.replace(/^\d+[-_\s]*/, "");
-const pretty = (n) => n.replace(/[-_]+/g, " ").replace(/^\d+\s*/, "").trim();
 
-export const images = meta.map(([orig, w, h, v], i) => {
-  const [t, m] = site.titles?.[stem(orig)] || [];
-  const title = t || (/^\d+$/.test(orig) ? "Photo" : pretty(orig)) || "Photo";
+// No titles, file names or captions are shown anywhere: title/label/caption stay empty. `alt` is only for screen readers.
+export const images = meta.map(([, w, h, v], i) => {
   const full = url("full", i, v);
   // src = medium (carousels etc.), thumb = grid/strips, full = lightbox / open in new tab
-  return { src: url("medium", i, v), thumb: url("thumb", i, v), full, w, h, title, label: title, alt: title, meta: m, caption: m, href: full };
+  return { src: url("medium", i, v), thumb: url("thumb", i, v), full, w, h, title: "", label: "", alt: "Photo", meta: "", caption: "", href: full };
 });

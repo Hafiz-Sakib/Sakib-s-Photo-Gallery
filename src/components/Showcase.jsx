@@ -26,7 +26,7 @@ export function Showcase({ items, onOpen }) {
           </button>
         ))}
       </div>
-      <p className="mt-1 text-center text-sm text-zinc-500">{items[i].title} · {i + 1}/{n}</p>
+      <p className="mt-1 text-center text-sm text-zinc-500">{i + 1} / {n}</p>
     </div>
   );
 }

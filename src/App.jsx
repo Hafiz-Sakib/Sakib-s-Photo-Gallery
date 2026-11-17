@@ -18,9 +18,12 @@ const DuoFlip = lazyNamed(() => import("./components/duo-flip"), "DuoFlip");
 const RibbonGallery = lazyNamed(() => import("./components/RibbonGallery"), "RibbonGallery");
 const TiltCarousel = lazyNamed(() => import("./components/tilt-carousel"), "TiltCarousel");
 
-// Grid and Showcase show every photo (lazy-loaded). The animated styles use only the newest FEATURED photos so 500 pictures never choke them.
+// Grid and Showcase show every photo (lazy-loaded). The animated styles use only FEATURED random photos so 500 pictures never choke them.
 const FEATURED = 60;
-const featured = images.length > FEATURED ? images.slice(-FEATURED) : images;
+// Random order: a fresh shuffle on every page load, shared by all styles (so the lightbox always matches what you clicked).
+const shuffle = (list) => { const r = list.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
+const shuffled = shuffle(images);
+const featured = shuffled.slice(0, FEATURED);
 
 // Card sizes follow the width of the gallery box (the page is at most 1152px wide), so pictures never look small inside it.
 const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -37,9 +40,9 @@ const STYLES = [
   { id: "duo", name: "Duo flip", frame: true, render: ({ items }) => <div className="mx-auto w-full px-4 py-16" style={{ maxWidth: "min(56rem, calc((100svh - 14rem) * 1.25))" }}><DuoFlip images={items} className="w-full" /></div> },
   { id: "ribbon", name: "Ribbon", frame: true, render: ({ items, dark, w }) => <RibbonGallery items={items} cardWidth={cl(Math.round(w * 0.22), 180, 290)} cardHeight={Math.round(cl(Math.round(w * 0.22), 180, 290) * 1.26)} label="Photo ribbon" dimColor={dark ? "rgb(14 15 26)" : "rgb(243 244 247)"} /> },
   { id: "tilt", name: "Tilt", frame: true, render: ({ items, w }) => <div className="py-14"><TiltCarousel items={items} cardWidth={cl(Math.round(w * 0.32), 230, 400)} cardHeight={Math.round(cl(Math.round(w * 0.32), 230, 400) * 0.66)} label="Photo carousel" /></div> },
-  { id: "infinite", name: "Infinite", frame: true, render: ({ items }) => <InfiniteGallery items={items} className="h-[72vh] min-h-[420px]" /> },
+  { id: "infinite", name: "Infinite", frame: true, render: ({ items }) => <InfiniteGallery items={items} showTitles={false} className="h-[72vh] min-h-[420px]" /> },
   { id: "depth", name: "Depth", frame: true, render: ({ items }) => <DepthCarousel items={items} className="h-[72vh] min-h-[420px]" /> },
-  { id: "prism", name: "Prism", frame: true, render: ({ items }) => <PrismCarousel cards={items.map((i) => ({ label: i.title, image: i.src, caption: i.meta }))} /> },
+  { id: "prism", name: "Prism", frame: true, render: ({ items }) => <PrismCarousel cards={items.map((i) => ({ label: "", image: i.src }))} /> },
 ];
 
 const year = new Date().getFullYear();
@@ -51,7 +54,7 @@ export default function App() {
   const dark = useDark();
   const w = useWidth();
   const cur = STYLES.find((s) => s.id === style) || STYLES[0];
-  const list = cur.all ? images : featured;
+  const list = cur.all ? shuffled : featured;
   useEffect(() => { try { localStorage.setItem("gallery-style", cur.id); } catch {} }, [cur.id]);
   const close = useCallback(() => setOpen(null), []);
 
@@ -85,13 +88,13 @@ export default function App() {
         <p className="rounded-2xl border border-dashed border-zinc-400/50 p-10 text-center text-zinc-500">No images yet. Put your photos in the <code>photos/</code> folder and run <code>npm run dev</code>.</p>
       ) : (
         <motion.section key={cur.id} aria-label={cur.name} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-          className={`relative isolate overflow-hidden rounded-[2rem] ${cur.frame ? "border border-ink/10 bg-surface/50" : ""}`}>
+          className={`clean-captions relative isolate overflow-hidden rounded-[2rem] ${cur.frame ? "border border-ink/10 bg-surface/50" : ""}`}>
           <Suspense fallback={<div className="grid h-[50vh] place-items-center text-sm text-ink/50">Loading…</div>}>
             {cur.render({ items: list, onOpen: setOpen, dark, w })}
           </Suspense>
         </motion.section>
       )}
-      {!cur.all && images.length > FEATURED && <p className="mt-3 text-center text-sm text-ink/50">Showing the latest {FEATURED} of {images.length} photos. Grid and Showcase show all of them.</p>}
+      {!cur.all && images.length > FEATURED && <p className="mt-3 text-center text-sm text-ink/50">Showing {FEATURED} random photos of {images.length}. Grid and Showcase show all of them.</p>}
       {cur.lightbox && <Lightbox items={list} index={open} onClose={close} onChange={setOpen} />}
 
       <footer className="mt-10 border-t border-ink/10 pb-2 pt-7 sm:mt-12 sm:pt-8">
