@@ -15,13 +15,21 @@ import { Lightbox } from "./components/Lightbox";
 import { RibbonGallery } from "./components/RibbonGallery";
 import { TiltCarousel } from "./components/tilt-carousel";
 
+// Card sizes follow the width of the gallery box (the page is at most 1152px wide), so pictures never look small inside it.
+const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const useWidth = () => {
+  const [w, setW] = useState(() => window.innerWidth);
+  useEffect(() => { const f = () => setW(window.innerWidth); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
+  return Math.min(w, 1152);
+};
+
 // To add a style: import it, add one entry here. `lightbox: true` = clicking a picture opens the full-size viewer.
 const STYLES = [
   { id: "grid", name: "Grid", lightbox: true, render: (p) => <Grid {...p} /> },
   { id: "showcase", name: "Showcase", lightbox: true, render: (p) => <Showcase {...p} /> },
-  { id: "duo", name: "Duo flip", frame: true, render: ({ items }) => <div className="mx-auto w-full max-w-4xl px-4 py-16"><DuoFlip images={items} /></div> },
-  { id: "ribbon", name: "Ribbon", frame: true, render: ({ items, dark }) => <RibbonGallery items={items} label="Photo ribbon" dimColor={dark ? "rgb(14 15 26)" : "rgb(243 244 247)"} /> },
-  { id: "tilt", name: "Tilt", frame: true, render: ({ items }) => <div className="py-14"><TiltCarousel items={items} cardWidth={300} cardHeight={200} label="Photo carousel" /></div> },
+  { id: "duo", name: "Duo flip", frame: true, render: ({ items }) => <div className="mx-auto w-full px-4 py-16" style={{ maxWidth: "min(56rem, calc((100svh - 14rem) * 1.25))" }}><DuoFlip images={items} className="w-full" /></div> },
+  { id: "ribbon", name: "Ribbon", frame: true, render: ({ items, dark, w }) => <RibbonGallery items={items} cardWidth={cl(Math.round(w * 0.22), 180, 290)} cardHeight={Math.round(cl(Math.round(w * 0.22), 180, 290) * 1.26)} label="Photo ribbon" dimColor={dark ? "rgb(14 15 26)" : "rgb(243 244 247)"} /> },
+  { id: "tilt", name: "Tilt", frame: true, render: ({ items, w }) => <div className="py-14"><TiltCarousel items={items} cardWidth={cl(Math.round(w * 0.32), 230, 400)} cardHeight={Math.round(cl(Math.round(w * 0.32), 230, 400) * 0.66)} label="Photo carousel" /></div> },
   { id: "infinite", name: "Infinite", frame: true, render: ({ items }) => <InfiniteGallery items={items} className="h-[72vh] min-h-[420px]" /> },
   { id: "depth", name: "Depth", frame: true, render: ({ items }) => <DepthCarousel items={items} className="h-[72vh] min-h-[420px]" /> },
   { id: "prism", name: "Prism", frame: true, render: ({ items }) => <PrismCarousel cards={items.map((i) => ({ label: i.title, image: i.src, caption: i.meta }))} /> },
@@ -33,6 +41,7 @@ export default function App() {
   const [style, setStyle] = useState(() => { try { return localStorage.getItem("gallery-style"); } catch { return null; } });
   const [open, setOpen] = useState(null);
   const dark = useDark();
+  const w = useWidth();
   const cur = STYLES.find((s) => s.id === style) || STYLES[0];
   useEffect(() => { try { localStorage.setItem("gallery-style", cur.id); } catch {} }, [cur.id]);
   const close = useCallback(() => setOpen(null), []);
@@ -65,7 +74,7 @@ export default function App() {
       ) : (
         <motion.section key={cur.id} aria-label={cur.name} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
           className={`relative isolate overflow-hidden rounded-[2rem] ${cur.frame ? "border border-ink/10 bg-surface/50" : ""}`}>
-          {cur.render({ items: images, onOpen: setOpen, dark })}
+          {cur.render({ items: images, onOpen: setOpen, dark, w })}
         </motion.section>
       )}
       {cur.lightbox && <Lightbox items={images} index={open} onClose={close} onChange={setOpen} />}
