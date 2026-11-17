@@ -8,7 +8,9 @@ Vite + React 18 + Tailwind 4 + Motion Brew (npm `motion-brew`, MIT). Only a gall
 
 ## Pictures: `src/gallery/`
 Drop any image in (sub-folders fine). No code changes. jpg jpeg jpe jfif png apng gif webp avif svg bmp ico tif tiff
-(+ heic/heif, Safari only), upper-case extensions too. Order = file name (`01-`, `02-` prefixes). The included
+(+ heic/heif), upper-case extensions too.
+On every `npm run dev` / `npm run build`, `scripts/prepare-gallery.mjs` converts HEIC to JPG and renames ALL images 1, 2, 3 ... from oldest to newest capture date
+(EXIF date, else file modified time). New photos are merged in by date. Original names are remembered in `src/gallery-names.json`, so captions in `src/site.js` still work. The included
 screenshots and portrait are from your portfolio; delete or replace them.
 
 ## Your info
