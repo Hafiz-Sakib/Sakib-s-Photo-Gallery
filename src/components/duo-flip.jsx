@@ -257,7 +257,16 @@ export const DuoFlip = React.forwardRef(function DuoFlip(
     );
     gl.uniform1i(U.uA, 0);
     gl.uniform1i(U.uB, 1);
-    const textures = images.map(() => {
+    // Textures are created lazily: only the picture on screen, the one being turned to and a few neighbours are
+    // kept on the GPU, so a library of 400+ photos costs the same as 10 (all photos are still in the flip order).
+    const KEEP = 9;
+    const textures = images.map(() => null);
+    const sizes = images.map(() => ({ w: 1, h: 1 }));
+    const loading = new Set();
+    let alive = true;
+    let lastNear = -1;
+    const mod = (a, m) => ((a % m) + m) % m;
+    const placeholder = () => {
       const tex = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([228, 228, 225, 255]));
@@ -266,26 +275,48 @@ export const DuoFlip = React.forwardRef(function DuoFlip(
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       return tex;
-    });
-    const sizes = images.map(() => ({ w: 1, h: 1 }));
-    let alive = true;
-    let loaded = 0;
-    images.forEach((im, i) => {
+    };
+    const ensure = (i) => {
+      if (textures[i]) return textures[i];
+      const tex = (textures[i] = placeholder());
+      if (loading.has(i)) return tex; // the pending load fills whatever texture slot i holds when it finishes
+      loading.add(i);
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.decoding = "async";
       img.onload = () => {
-        if (!alive) return;
-        gl.bindTexture(gl.TEXTURE_2D, textures[i]);
+        loading.delete(i);
+        const target = textures[i];
+        if (!alive || !target) return; // evicted while loading
+        gl.bindTexture(gl.TEXTURE_2D, target);
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); sizes[i] = { w: img.naturalWidth, h: img.naturalHeight }; } catch { /* keep the placeholder */ }
-        loaded++;
-        if (i === current.current || loaded === images.length) setReady(true);
+        if (i === current.current) setReady(true);
         draw();
       };
-      img.onerror = () => { loaded++; if (loaded === images.length) setReady(true); };
-      img.src = im.src;
-    });
+      img.onerror = () => { loading.delete(i); if (i === current.current) setReady(true); };
+      img.src = images[i].src;
+      return tex;
+    };
+    const evict = (centre) => {
+      const held = textures.map((t, i) => (t ? i : -1)).filter((i) => i >= 0);
+      if (held.length <= KEEP) return;
+      const dist = (i) => { const d = Math.abs(i - centre); return Math.min(d, images.length - d); };
+      held.sort((a, b) => dist(b) - dist(a));
+      for (const i of held.slice(0, held.length - KEEP)) {
+        if (turn.current && (i === turn.current.from || i === turn.current.to)) continue;
+        gl.deleteTexture(textures[i]);
+        textures[i] = null;
+        sizes[i] = { w: 1, h: 1 };
+      }
+    };
+    const near = (c) => {
+      if (c === lastNear) return;
+      lastNear = c;
+      ensure(c);
+      for (const d of [1, -1, 2, -2, 3, -3]) ensure(mod(c + d, images.length));
+      evict(c);
+    };
 
     const draw = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -336,6 +367,7 @@ export const DuoFlip = React.forwardRef(function DuoFlip(
       gl.uniform1f(U.uNoise, p.noise);
       gl.uniform1f(U.uThick, p.thickness);
       gl.uniform1f(U.uTime, (performance.now() / 1e3) % 100);
+      ensure(from); ensure(to); near(current.current);
       const [ax, ay] = asp(from);
       const [bx, by] = asp(to);
       gl.uniform2f(U.uAspA, ax, ay);
@@ -355,7 +387,7 @@ export const DuoFlip = React.forwardRef(function DuoFlip(
       cancelAnimationFrame(raf.current);
       ro.disconnect();
       api.current = null;
-      textures.forEach((t) => gl.deleteTexture(t));
+      textures.forEach((t) => t && gl.deleteTexture(t));
       gl.deleteProgram(prog);
     };
   }, [images, aspect]);

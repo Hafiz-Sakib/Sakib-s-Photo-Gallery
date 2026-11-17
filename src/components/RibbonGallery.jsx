@@ -74,6 +74,8 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
   const track = React.useRef(null);
   const blurNode = React.useRef(null);
   const slices = React.useRef([]);
+  const cardEls = React.useRef([]);
+  const assigned = React.useRef([]); // slot -> { key, idx }: which photo each ring slot currently shows
   const washes = React.useRef([]);
   const titles = React.useRef([]);
   const arrows = React.useRef([]);
@@ -110,15 +112,45 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
   const radius = run ? run / (0.9 + Math.max(0, Math.min(1, curve)) * 2.6) : 1;
   const visibleHalf = Math.min(radius * 1.45, run * 0.9);
   const needed = Math.ceil((2 * visibleHalf + cardWidth) / pitch) + 2;
-  const count = run && items.length ? Math.ceil(needed / items.length) * items.length : 0;
+  // A fixed small ring of cards (about a screen's worth). As a card scrolls out of sight and wraps around, it is
+  // re-filled with the next photo, so ALL photos play in order but only ~15 cards ever exist in the DOM.
+  const count = run && items.length ? needed : 0;
   const span = count * pitch;
 
+  const idxOf = (k) => assigned.current[k]?.idx ?? k % items.length;
   const activate = (k) => {
-    const idx = k % items.length;
+    const idx = idxOf(k);
     if (activeIdx.current === idx) return;
     activeIdx.current = idx;
     onActiveRef.current?.(idx);
   };
+
+  // Fill ring slot k with photo number v (any integer; wraps over the list). Written straight to the DOM, no re-render.
+  const paintCard = (k, v) => {
+    const n = items.length;
+    const idx = mod(v, n);
+    const item = items[idx];
+    const src = srcOf(item);
+    const key = `${idx}|${cardWidth}|${cardHeight}|${ss}|${ratios[src] || 0}`;
+    if (assigned.current[k]?.key === key) return;
+    assigned.current[k] = { key, idx };
+    const { w: bw, h: bh, ox, oy } = fit(src);
+    for (let j = 0; j < SL; j++) {
+      const el = slices.current[k * SL + j];
+      if (!el) continue;
+      el.style.backgroundImage = `url("${src}")`;
+      el.style.backgroundSize = `${bw * ss}px ${bh * ss}px`;
+      el.style.backgroundPosition = `${(ox - j * sliceW + OVERLAP) * ss}px ${oy * ss}px`;
+    }
+    const card = cardEls.current[k];
+    if (card) {
+      if (item.href) card.setAttribute("href", item.href);
+      card.setAttribute("aria-label", item.alt ?? item.title ?? "Photo");
+    }
+  };
+
+  // Layout or list changed: forget what each slot shows so the next frame repaints them.
+  React.useEffect(() => { assigned.current = []; }, [items, cardWidth, cardHeight, ss, ratios, SL, srcOf]);
 
   // Learn each screenshot's aspect ratio so it can be cover-cropped rather than stretched.
   React.useEffect(() => {
@@ -233,7 +265,9 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
 
     const focusEase = s.still ? 1 : 1 - Math.exp(-dt * 9);
     for (let k = 0; k < count; k++) {
-      const center = mod(k * pitch + c.x + span / 2, span) - span / 2;
+      const u = k * pitch + c.x + span / 2;
+      const center = mod(u, span) - span / 2;
+      paintCard(k, k - Math.floor(u / span) * count);
       // Cards well outside the visible arc: hide once, then skip all per-slice work.
       if (Math.abs(center) > visibleHalf + cardWidth) {
         if (!culled.current[k]) {
@@ -283,13 +317,13 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
   });
 
   // "Contain" geometry: the WHOLE photo fits inside the card (nothing is cropped), centred; the rest of the card is the card colour.
-  const fit = (src) => {
+  function fit(src) {
     const r = ratios[src] || known[src] || cardWidth / cardHeight;
     const wide = r >= cardWidth / cardHeight;
     const w = wide ? cardWidth : cardHeight * r;
     const h = wide ? cardWidth / r : cardHeight;
     return { w, h, ox: (cardWidth - w) / 2, oy: (cardHeight - h) / 2 };
-  };
+  }
 
   return (
     <div
@@ -354,20 +388,18 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
         style={{ transform: `rotate(${-angle}deg)`, opacity: 0 }}
       >
         {Array.from({ length: count }, (_, k) => {
-          const item = items[k % items.length];
           const repeat = k >= items.length;
-          const Card = item.href ? "a" : "div";
-          const imgSrc = srcOf(item);
-          const { w: bw, h: bh, ox, oy } = fit(imgSrc);
+          const Card = items[0]?.href ? "a" : "div";
           return (
             <Card
               key={k}
-              {...(item.href ? { href: item.href, target: "_blank", rel: "noreferrer", draggable: false } : {})}
-              {...(repeat ? { "aria-hidden": true, tabIndex: -1 } : { "aria-label": item.alt ?? item.title })}
+              ref={(el) => void (cardEls.current[k] = el)}
+              {...(items[0]?.href ? { target: "_blank", rel: "noreferrer", draggable: false } : {})}
+              {...(repeat ? { "aria-hidden": true, tabIndex: -1 } : {})}
               onClick={(e) => {
                 if (swallowClick.current) return e.preventDefault();
                 // On touch the first tap only selects the card (shows its info); a second tap opens it.
-                if (pointerType.current !== "mouse" && activeIdx.current !== k % items.length) {
+                if (pointerType.current !== "mouse" && activeIdx.current !== idxOf(k)) {
                   e.preventDefault();
                   activate(k);
                 }
@@ -405,10 +437,7 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
                     height: cardHeight * ss,
                     left: (-sliceW / 2 - OVERLAP) * ss,
                     top: (-cardHeight / 2) * ss,
-                    backgroundImage: `url("${imgSrc}")`,
                     backgroundRepeat: "no-repeat",
-                    backgroundSize: `${bw * ss}px ${bh * ss}px`,
-                    backgroundPosition: `${(ox - j * sliceW + OVERLAP) * ss}px ${oy * ss}px`,
                     visibility: "hidden",
                   }}
                 >

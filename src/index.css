@@ -45,3 +45,6 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
 /* No captions in any gallery style: hide the empty caption boxes that Depth and Prism still draw */
 .clean-captions figcaption:empty { display: none; }
 .clean-captions :is(div, span):has(> .truncate:empty) { display: none; }
+
+/* Prism has one pagination dot per photo; with hundreds of photos that row is unusable, so it is hidden. */
+.prism-all [class~="bottom-4"][class~="z-20"] { display: none; }

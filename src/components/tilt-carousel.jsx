@@ -52,6 +52,8 @@ export function TiltCarousel({
         let d = mod(i - s.pos, c.n);
         if (d > c.n / 2) d -= c.n;
         const a = Math.abs(d);
+        // Photos download only when a card is within a few steps of the front, so 400+ photos never load at once.
+        if (a < 6 && !el.dataset.l) { el.dataset.l = "1"; el.querySelectorAll("img[data-src]").forEach((im) => { im.src = im.dataset.src; }); }
         if (a > 3.4) { el.style.visibility = "hidden"; continue; }
         const side = clamp(d, -1, 1);
         const sc = 1 - (1 - c.inactiveScale) * Math.min(1, a);
@@ -171,8 +173,8 @@ export function TiltCarousel({
             className="absolute left-1/2 top-1/2 block overflow-hidden rounded-[22px] bg-zinc-200 dark:bg-zinc-800 shadow-[0_18px_40px_-14px_rgba(20,21,26,.45)] will-change-transform"
             style={{ width: cardWidth, height: cardHeight, marginLeft: -cardWidth / 2, marginTop: -cardHeight / 2, visibility: "hidden", backfaceVisibility: "hidden" }}
           >
-            {fill && <img src={it.thumb || src} alt="" aria-hidden draggable={false} decoding="async" loading="lazy" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-80 blur-2xl" />}
-            <img src={src} alt="" draggable={false} decoding="async" loading={i < 4 ? "eager" : "lazy"} className={`relative h-full w-full ${fill ? "object-contain" : "object-cover"}`} />
+            {fill && <img data-src={it.thumb || src} alt="" aria-hidden draggable={false} decoding="async" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-80 blur-2xl" />}
+            <img data-src={src} alt="" draggable={false} decoding="async" className={`relative h-full w-full ${fill ? "object-contain" : "object-cover"}`} />
           </Tag>
         );
       })}

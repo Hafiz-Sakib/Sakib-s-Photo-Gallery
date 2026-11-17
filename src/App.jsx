@@ -1,9 +1,10 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { images } from "./gallery";
 import { site } from "./site";
 import { Icon } from "./components/icons";
 import ThemeToggle from "./components/ThemeToggle";
+import InstallButton from "./components/InstallButton";
 import { useDark } from "./theme";
 import { Grid } from "./components/Grid";
 import { Showcase } from "./components/Showcase";
@@ -11,19 +12,22 @@ import { Lightbox } from "./components/Lightbox";
 
 // Each style is its own chunk: three.js / gsap / motion-brew are only downloaded when that style is opened.
 const lazyNamed = (load, name) => lazy(() => load().then((m) => ({ default: m[name] })));
-const InfiniteGallery = lazyNamed(() => import("motion-brew/infinite-gallery"), "InfiniteGallery");
+const InfiniteGallery = lazyNamed(() => import("./components/infinite-gallery"), "InfiniteGallery");
 const DepthCarousel = lazyNamed(() => import("motion-brew/depth-carousel"), "DepthCarousel");
 const PrismCarousel = lazyNamed(() => import("motion-brew/prism-carousel"), "PrismCarousel");
 const DuoFlip = lazyNamed(() => import("./components/duo-flip"), "DuoFlip");
 const RibbonGallery = lazyNamed(() => import("./components/RibbonGallery"), "RibbonGallery");
 const TiltCarousel = lazyNamed(() => import("./components/tilt-carousel"), "TiltCarousel");
 
-// Grid and Showcase show every photo (lazy-loaded). The animated styles use only FEATURED random photos so 500 pictures never choke them.
-const FEATURED = 60;
-// Random order: a fresh shuffle on every page load, shared by all styles (so the lightbox always matches what you clicked).
+// EVERY style shows EVERY photo, in a fresh random order each time the page loads and each time you switch style.
+// (Heavy styles only keep a few photos in memory at once, see the components, so hundreds of pictures stay smooth.)
 const shuffle = (list) => { const r = list.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
-const shuffled = shuffle(images);
-const featured = shuffled.slice(0, FEATURED);
+
+// Prism needs a stable `cards` array, and has one pagination dot per card, which is unusable with hundreds of photos: hidden (see index.css).
+function PrismAll({ items }) {
+  const cards = useMemo(() => items.map((i) => ({ label: "", image: i.src })), [items]);
+  return <div className="prism-all"><PrismCarousel cards={cards} /></div>;
+}
 
 // Card sizes follow the width of the gallery box (the page is at most 1152px wide), so pictures never look small inside it.
 const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -35,14 +39,14 @@ const useWidth = () => {
 
 // To add a style: import it, add one entry here. `lightbox: true` = clicking a picture opens the full-size viewer.
 const STYLES = [
-  { id: "grid", name: "Grid", all: true, lightbox: true, render: (p) => <Grid {...p} /> },
-  { id: "showcase", name: "Showcase", all: true, lightbox: true, render: (p) => <Showcase {...p} /> },
+  { id: "grid", name: "Grid", lightbox: true, render: (p) => <Grid {...p} /> },
+  { id: "showcase", name: "Showcase", lightbox: true, render: (p) => <Showcase {...p} /> },
   { id: "duo", name: "Duo flip", frame: true, render: ({ items }) => <div className="mx-auto w-full px-4 py-16" style={{ maxWidth: "min(56rem, calc((100svh - 14rem) * 1.25))" }}><DuoFlip images={items} className="w-full" /></div> },
   { id: "ribbon", name: "Ribbon", frame: true, render: ({ items, dark, w }) => <RibbonGallery items={items} cardWidth={cl(Math.round(w * 0.22), 180, 290)} cardHeight={Math.round(cl(Math.round(w * 0.22), 180, 290) * 1.26)} label="Photo ribbon" dimColor={dark ? "rgb(14 15 26)" : "rgb(243 244 247)"} /> },
   { id: "tilt", name: "Tilt", frame: true, render: ({ items, w }) => <div className="py-14"><TiltCarousel items={items} cardWidth={cl(Math.round(w * 0.32), 230, 400)} cardHeight={Math.round(cl(Math.round(w * 0.32), 230, 400) * 0.66)} label="Photo carousel" /></div> },
   { id: "infinite", name: "Infinite", frame: true, render: ({ items }) => <InfiniteGallery items={items} showTitles={false} className="h-[72vh] min-h-[420px]" /> },
   { id: "depth", name: "Depth", frame: true, render: ({ items }) => <DepthCarousel items={items} className="h-[72vh] min-h-[420px]" /> },
-  { id: "prism", name: "Prism", frame: true, render: ({ items }) => <PrismCarousel cards={items.map((i) => ({ label: "", image: i.src }))} /> },
+  { id: "prism", name: "Prism", frame: true, render: ({ items }) => <PrismAll items={items} /> },
 ];
 
 const year = new Date().getFullYear();
@@ -54,7 +58,8 @@ export default function App() {
   const dark = useDark();
   const w = useWidth();
   const cur = STYLES.find((s) => s.id === style) || STYLES[0];
-  const list = cur.all ? shuffled : featured;
+  // New random order on load and whenever the style changes; stable otherwise so the lightbox matches what you clicked.
+  const list = useMemo(() => shuffle(images), [cur.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { try { localStorage.setItem("gallery-style", cur.id); } catch {} }, [cur.id]);
   const close = useCallback(() => setOpen(null), []);
 
@@ -70,7 +75,10 @@ export default function App() {
             <p className="mt-2 max-w-xl text-base text-ink/70 sm:text-lg">{site.name} · {site.tagline}</p>
             <p className="mt-1 text-sm text-ink/50">{site.place}</p>
           </div>
-          <ThemeToggle className="mt-1" />
+          <div className="mt-1 flex shrink-0 items-center gap-2">
+            <InstallButton />
+            <ThemeToggle />
+          </div>
         </div>
         <nav aria-label="Gallery style" className="mt-8 flex justify-start sm:justify-center">
           <div className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-ink/[0.07] p-1 [scrollbar-width:none]">
@@ -94,7 +102,6 @@ export default function App() {
           </Suspense>
         </motion.section>
       )}
-      {!cur.all && images.length > FEATURED && <p className="mt-3 text-center text-sm text-ink/50">Showing {FEATURED} random photos of {images.length}. Grid and Showcase show all of them.</p>}
       {cur.lightbox && <Lightbox items={list} index={open} onClose={close} onChange={setOpen} />}
 
       <footer className="mt-10 border-t border-ink/10 pb-2 pt-7 sm:mt-12 sm:pt-8">

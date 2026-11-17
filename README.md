@@ -20,9 +20,7 @@ Drop in photos, run one command, and publish up to ~500 pictures on Vercel for f
 
 ## Screenshots
 
-| Ribbon style | Duo flip style |
-| :---: | :---: |
-| ![Ribbon gallery](docs/screenshots/ribbon.png) | ![Duo flip gallery](docs/screenshots/duo-flip.png) |
+![Sakib's Gallery](docs/screenshots/gallery.png)
 
 > The style switcher sits at the top of the page, and the choice is remembered between visits.
 
@@ -49,14 +47,15 @@ Drop in photos, run one command, and publish up to ~500 pictures on Vercel for f
 
 ## Features
 
-- **Random order**: photos are shuffled on every page load, in every style.
+- **Random order**: photos are shuffled on every page load and every time you switch style, in every style.
+- **Every style shows every photo**: no style is limited to a sample, so all your pictures (400+) appear everywhere.
 - **Clean look**: no titles, file names or captions are shown anywhere, only the pictures.
 - **8 gallery styles** in one page: Grid, Showcase, Duo flip, Ribbon, Tilt, Infinite, Depth and Prism.
 - **Automatic photo pipeline**: HEIC support, auto-rotate, EXIF/GPS stripping, three WebP sizes, renamed oldest to newest by capture date.
-- **Scales to ~500 photos** with no database. The photo list is a tiny JSON file (about 12 KB of JS in total), and images are lazy-loaded.
+- **Scales to ~500 photos** with no database. The photo list is a tiny JSON file (about 12 KB of JS in total). Heavy styles load pictures only when they are about to be seen (Duo flip keeps just a few on the GPU, Ribbon and Infinite reuse a small set of cards, Tilt loads by distance).
 - **Full-size lightbox** for Grid and Showcase, with keyboard and swipe navigation.
 - **Day / night theme** with a circular reveal animation. The choice is remembered.
-- **Installable PWA** for Android, desktop and iOS, with a service worker that caches the app shell and every photo you open.
+- **Installable PWA** with an **Install** button in the header (one click opens the browser install dialog, with a short how-to on browsers that have none, like iPhone Safari), for Android, desktop and iOS, with a service worker that caches the app shell and every photo you open.
 - **Code-split styles**: three.js, GSAP and Motion Brew are downloaded only when a style that needs them is opened.
 - **Privacy-friendly**: GPS and EXIF metadata are removed from every published image.
 - **Vercel-ready** with long-lived immutable caching headers for images and assets.
@@ -65,18 +64,20 @@ Drop in photos, run one command, and publish up to ~500 pictures on Vercel for f
 
 | Style | What it does | Photos shown | Opens in lightbox |
 | --- | --- | :---: | :---: |
-| **Grid** | Responsive thumbnail grid | all | yes |
-| **Showcase** | Large featured layout | all | yes |
-| **Duo flip** | WebGL liquid-glass page turn. Click, drag or use the arrow keys. Every picture is shown **in full**, never cropped | random 60 | no |
-| **Ribbon** | Tilted ribbon of cards you can scroll through | random 60 | no |
-| **Tilt** | 3D tilt carousel | random 60 | no |
-| **Infinite** | Endless drifting wall of photos | random 60 | no |
-| **Depth** | Depth-of-field carousel | random 60 | no |
-| **Prism** | Rotating prism of cards | random 60 | no |
+| **Grid** | Responsive masonry grid (the default style) | all | yes |
+| **Showcase** | Large featured layout with a thumbnail strip | all | yes |
+| **Duo flip** | WebGL liquid-glass page turn. Click, drag or use the arrow keys. Every picture is shown **in full**, never cropped | all | no |
+| **Ribbon** | Tilted ribbon of cards you can scroll through | all | no |
+| **Tilt** | 3D tilt carousel | all | no |
+| **Infinite** | Endless drifting wall of photos. A card gets the next photo each time it wraps around | all | no |
+| **Depth** | Depth-of-field carousel | all | no |
+| **Prism** | Rotating prism of cards | all | no |
 
-Grid and Showcase show every photo. The animated styles use `FEATURED` random photos (60 by default) so a library of 500 pictures never slows them down. Change it in `src/App.jsx`.
+Every style gets the same photo list in a fresh random order, so no photo is ever left out. The animated styles stay smooth with hundreds of photos because they never hold all of them in memory at once.
 
 ### About Duo flip
+
+Textures are created lazily: only the current picture and a few neighbours stay on the GPU, so 400+ photos cost the same as 10.
 
 Duo flip is a local copy of the `DuoFlip` component from [Motion Brew](https://motion-brew.com) (MIT) in `src/components/duo-flip.jsx`. The original crops every picture to fill its card. This copy draws the **whole picture** (contain) and fills any leftover space with a soft, dimmed, blurred copy of the same photo, so portrait and landscape shots both look right.
 
@@ -139,8 +140,7 @@ Useful notes:
 gallery-site/
 ├── docs/
 │   └── screenshots/              # images used in this README
-│       ├── ribbon.png
-│       └── duo-flip.png
+│       └── gallery.png
 ├── photos/                       # DROP YOUR PHOTOS HERE (git-ignored, emptied after processing)
 │   └── PUT_PHOTOS_HERE.txt
 ├── originals/                    # untouched backups of processed photos (git-ignored, auto-created)
@@ -164,6 +164,8 @@ gallery-site/
 │   │   ├── duo-flip.jsx          # Duo flip style (WebGL, shows full pictures)
 │   │   ├── RibbonGallery.jsx     # Ribbon style
 │   │   ├── tilt-carousel.jsx     # Tilt style
+│   │   ├── infinite-gallery.jsx  # Infinite style (local copy that cycles through every photo)
+│   │   ├── InstallButton.jsx     # "Install" button (PWA)
 │   │   ├── Lightbox.jsx          # full-size viewer for Grid and Showcase
 │   │   ├── ThemeToggle.jsx       # sun / moon switch
 │   │   └── icons.jsx             # social and UI icons
@@ -171,6 +173,7 @@ gallery-site/
 │   ├── gallery.js                # builds the photo list from gallery-meta.json (no titles or captions)
 │   ├── gallery-meta.json         # generated: [[originalName, width, height, version], ...]
 │   ├── site.js                   # your name, bio and social links
+│   ├── pwa.js                    # captures the browser install prompt for the Install button
 │   ├── theme.js                  # day / night logic with circular reveal
 │   ├── index.css                 # Tailwind, theme tokens, view-transition rules
 │   └── main.jsx                  # app entry and service worker registration
@@ -200,13 +203,9 @@ gallery-site/
 
 Set the same title in `index.html`, `public/manifest.webmanifest` and `site.title` in `src/site.js`.
 
-### How many photos animated styles use
+### How many photos each style shows
 
-In `src/App.jsx`:
-
-```js
-const FEATURED = 60; // random N photos for Duo flip, Ribbon, Tilt, Infinite, Depth, Prism
-```
+All of them. There is no limit to configure: every style gets the full list, shuffled (see `shuffle` in `src/App.jsx`).
 
 ---
 
@@ -215,14 +214,13 @@ const FEATURED = 60; // random N photos for Duo flip, Ribbon, Tilt, Infinite, De
 All styles live in the `STYLES` array in `src/App.jsx`. One entry is one style:
 
 ```jsx
-{ id: "grid", name: "Grid", all: true, lightbox: true, render: (p) => <Grid {...p} /> },
+{ id: "grid", name: "Grid", lightbox: true, render: (p) => <Grid {...p} /> },
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `id` | Unique key, also saved in `localStorage` |
 | `name` | Label in the switcher |
-| `all: true` | Show every photo instead of only the newest `FEATURED` |
 | `lightbox: true` | Clicking a picture opens the full-size viewer |
 | `frame: true` | Draws the rounded bordered card around the style |
 | `render` | Receives `{ items, onOpen, dark, w }` and returns the component |
@@ -242,7 +240,7 @@ All styles live in the `STYLES` array in `src/App.jsx`. One entry is one style:
 
 ## PWA and offline support
 
-- Installable on Android and desktop (Chrome/Edge: install icon in the address bar) and on iOS (Share, then Add to Home Screen).
+- Tap the **Install** button in the header: on Android and desktop (Chrome/Edge) it opens the install dialog straight away. On iOS Safari there is no install dialog, so the button shows the manual steps (Share, then Add to Home Screen). The button disappears once the app is installed.
 - `public/sw.js` caches the app shell and every photo you open, so repeat visits and offline use are fast.
 - The service worker is registered only in production (`npm run build` / Vercel), not in `npm run dev`.
 - Bump `VERSION` in `public/sw.js` to make every visitor drop the old caches.

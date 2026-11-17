@@ -1,5 +1,6 @@
 import "@fontsource-variable/bricolage-grotesque/opsz.css";
 import "@fontsource-variable/figtree/wght.css";
+import "./pwa"; // captures the install prompt as early as possible
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
