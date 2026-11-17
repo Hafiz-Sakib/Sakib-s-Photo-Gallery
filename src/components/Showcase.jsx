@@ -8,10 +8,11 @@ export function Showcase({ items, onOpen }) {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="relative aspect-[3/2] overflow-hidden rounded-3xl bg-zinc-200 dark:bg-zinc-800">
+        <img src={items[i].thumb || items[i].src} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-125 object-cover opacity-80 blur-2xl" />
         <AnimatePresence mode="wait">
           <motion.img key={i} src={items[i].src} alt={items[i].alt} onClick={() => onOpen(i)}
             initial={{ opacity: 0, scale: 1.04 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
-            className="absolute inset-0 h-full w-full cursor-zoom-in object-cover" />
+            className="absolute inset-0 h-full w-full cursor-zoom-in object-contain" />
         </AnimatePresence>
         {["‹", "›"].map((c, k) => (
           <button key={c} aria-label={k ? "Next" : "Previous"} onClick={() => go(k ? 1 : -1)}

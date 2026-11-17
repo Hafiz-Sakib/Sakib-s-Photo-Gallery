@@ -14,8 +14,7 @@ const lazyNamed = (load, name) => lazy(() => load().then((m) => ({ default: m[na
 const InfiniteGallery = lazyNamed(() => import("motion-brew/infinite-gallery"), "InfiniteGallery");
 const DepthCarousel = lazyNamed(() => import("motion-brew/depth-carousel"), "DepthCarousel");
 const PrismCarousel = lazyNamed(() => import("motion-brew/prism-carousel"), "PrismCarousel");
-const ProjectIndex = lazyNamed(() => import("motion-brew/project-index"), "ProjectIndex");
-const DuoFlip = lazyNamed(() => import("@/components/duo-flip"), "DuoFlip");
+const DuoFlip = lazyNamed(() => import("./components/duo-flip"), "DuoFlip");
 const RibbonGallery = lazyNamed(() => import("./components/RibbonGallery"), "RibbonGallery");
 const TiltCarousel = lazyNamed(() => import("./components/tilt-carousel"), "TiltCarousel");
 
@@ -41,8 +40,6 @@ const STYLES = [
   { id: "infinite", name: "Infinite", frame: true, render: ({ items }) => <InfiniteGallery items={items} className="h-[72vh] min-h-[420px]" /> },
   { id: "depth", name: "Depth", frame: true, render: ({ items }) => <DepthCarousel items={items} className="h-[72vh] min-h-[420px]" /> },
   { id: "prism", name: "Prism", frame: true, render: ({ items }) => <PrismCarousel cards={items.map((i) => ({ label: i.title, image: i.src, caption: i.meta }))} /> },
-  { id: "index", name: "Index", lightbox: true, render: ({ items, onOpen }) => (
-    <ProjectIndex projects={items.map((i) => ({ title: i.title, meta: i.meta, image: i.src, alt: i.alt }))} onOpen={(_, idx) => onOpen(idx)} />) },
 ];
 
 const year = new Date().getFullYear();

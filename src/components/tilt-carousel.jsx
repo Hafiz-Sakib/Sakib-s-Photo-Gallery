@@ -153,6 +153,9 @@ export function TiltCarousel({
       {items.map((it, i) => {
         const src = dpr >= 1.5 && it.hd ? it.hd : it.src;
         const Tag = it.href ? "a" : "div";
+        // Photo shape differs from the card shape (portrait phone photos): show it WHOLE on a blurred copy of itself instead of cropping.
+        const ratio = it.w && it.h ? it.w / it.h : 0;
+        const fill = ratio && Math.abs(ratio / (cardWidth / cardHeight) - 1) > 0.06;
         return (
           <Tag
             key={it.src}
@@ -168,7 +171,8 @@ export function TiltCarousel({
             className="absolute left-1/2 top-1/2 block overflow-hidden rounded-[22px] bg-zinc-200 dark:bg-zinc-800 shadow-[0_18px_40px_-14px_rgba(20,21,26,.45)] will-change-transform"
             style={{ width: cardWidth, height: cardHeight, marginLeft: -cardWidth / 2, marginTop: -cardHeight / 2, visibility: "hidden", backfaceVisibility: "hidden" }}
           >
-            <img src={src} alt="" draggable={false} decoding="async" loading={i < 4 ? "eager" : "lazy"} className="h-full w-full object-cover" />
+            {fill && <img src={it.thumb || src} alt="" aria-hidden draggable={false} decoding="async" loading="lazy" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-80 blur-2xl" />}
+            <img src={src} alt="" draggable={false} decoding="async" loading={i < 4 ? "eager" : "lazy"} className={`relative h-full w-full ${fill ? "object-contain" : "object-cover"}`} />
             <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-4 pb-3 pt-10 text-[13px] font-semibold leading-none text-white">{it.title}</span>
           </Tag>
         );

@@ -282,13 +282,13 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
     }
   });
 
-  // Cover-crop geometry for one image: scaled size and the x offset that centres on `focusX`.
+  // "Contain" geometry: the WHOLE photo fits inside the card (nothing is cropped), centred; the rest of the card is the card colour.
   const fit = (src) => {
     const r = ratios[src] || known[src] || cardWidth / cardHeight;
     const wide = r >= cardWidth / cardHeight;
-    const w = wide ? cardHeight * r : cardWidth;
-    const h = wide ? cardHeight : cardWidth / r;
-    return { w, h, ox: (cardWidth - w) * focusX };
+    const w = wide ? cardWidth : cardHeight * r;
+    const h = wide ? cardWidth / r : cardHeight;
+    return { w, h, ox: (cardWidth - w) / 2, oy: (cardHeight - h) / 2 };
   };
 
   return (
@@ -358,7 +358,7 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
           const repeat = k >= items.length;
           const Card = item.href ? "a" : "div";
           const imgSrc = srcOf(item);
-          const { w: bw, h: bh, ox } = fit(imgSrc);
+          const { w: bw, h: bh, ox, oy } = fit(imgSrc);
           return (
             <Card
               key={k}
@@ -408,7 +408,7 @@ export const RibbonGallery = React.forwardRef(function RibbonGallery(
                     backgroundImage: `url("${imgSrc}")`,
                     backgroundRepeat: "no-repeat",
                     backgroundSize: `${bw * ss}px ${bh * ss}px`,
-                    backgroundPosition: `${(ox - j * sliceW + OVERLAP) * ss}px 0`,
+                    backgroundPosition: `${(ox - j * sliceW + OVERLAP) * ss}px ${oy * ss}px`,
                     visibility: "hidden",
                   }}
                 >
