@@ -1,6 +1,7 @@
 // Your info, taken from your portfolio. Edit freely.
 export const site = {
   name: "Hafiz Sakib",
+  full: "Mohammad Hafizur Rahman Sakib",
   tagline: "Full-stack developer · Competitive programmer · NLP researcher",
   place: "Chattogram, Bangladesh",
   bio: "CSE student at Premier University who builds full-stack web apps with clean UI and solid architecture.",

@@ -17,6 +17,8 @@
 :root { color-scheme: light; --ink: 20 21 26; --mist: 243 244 247; --surface: 255 255 255; }
 :root.dark { color-scheme: dark; --ink: 232 233 244; --mist: 14 15 26; --surface: 22 24 40; }
 
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 html, body { overflow-x: clip; }
 body { background: rgb(var(--mist)); color: rgb(var(--ink)); -webkit-font-smoothing: antialiased; }
 h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
