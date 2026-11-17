@@ -1,4 +1,6 @@
-@tailwind base; @tailwind components; @tailwind utilities;
+@import "tailwindcss";
+/* Tailwind must see the classes inside the Motion Brew components */
+@source "../node_modules/motion-brew/dist";
 :root { color-scheme: light dark; }
-body { @apply bg-zinc-50 text-zinc-900 antialiased; font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; }
-@media (prefers-color-scheme: dark) { body { @apply bg-zinc-950 text-zinc-100; } }
+body { background: #fafafa; color: #18181b; -webkit-font-smoothing: antialiased; font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; }
+@media (prefers-color-scheme: dark) { body { background: #09090b; color: #f4f4f5; } }

@@ -1,33 +1,25 @@
 # Photo Gallery
 
-Vite + React 18 + Tailwind 3 + framer-motion. Only a gallery, with a style switcher.
+Vite + React 18 + Tailwind 4 + Motion Brew (npm `motion-brew`, MIT). Only a gallery, with a style switcher.
 
-## Run
     npm install
-    npm run dev        # http://localhost:5173
-    npm run build      # output in dist/
+    npm run dev       # http://localhost:5173
+    npm run build     # output in dist/
 
-## Your pictures go here: `src/gallery/`
-Drop any image in (sub-folders are fine), delete the `sample-*.jpg` files, done. No code changes.
-jpg jpeg jpe jfif png apng gif webp avif svg bmp ico tif tiff (+ heic/heif, Safari only). Upper-case extensions work too.
-Order follows file names (`01-`, `02-` prefixes); the caption is the file name.
+## Pictures: `src/gallery/`
+Drop any image in (sub-folders fine). No code changes. jpg jpeg jpe jfif png apng gif webp avif svg bmp ico tif tiff
+(+ heic/heif, Safari only), upper-case extensions too. Order = file name (`01-`, `02-` prefixes). The included
+screenshots and portrait are from your portfolio; delete or replace them.
 
-## Your name
-Edit `src/site.js`.
+## Your info
+`src/site.js`: name, tagline, bio, email, social links and optional captions per file name.
 
-## Gallery styles (the switcher at the top, choice is remembered)
-Grid, Showcase, Ribbon, Tilt are built in.
-**Duo flip** (WebGL liquid fold): run this once in the project folder and it appears in the switcher by itself:
-
-    curl -o src/components/duo-flip.tsx https://motion-brew.com/r/duo-flip.tsx
-
-(Dependencies clsx, lucide-react, motion, tailwind-merge are already in package.json.)
-Any other Motion Brew gallery: copy its file into `src/components/`, import it in `src/App.jsx` and add one entry to the `STYLES` array.
+## Styles (switcher at the top, choice is remembered)
+Grid, Showcase, Duo flip, Ribbon, Tilt, Infinite, Depth, Prism, Index.
+To add or remove one, edit the `STYLES` list in `src/App.jsx`.
 
 ## Structure
-    src/gallery/        <- your images
-    src/gallery.js      <- auto-loads every image in that folder
-    src/site.js         <- name + tagline
-    src/App.jsx         <- style switcher + STYLES list
-    src/components/     <- Grid, Showcase, Lightbox, RibbonGallery, tilt-carousel
-# Sakib-s-Photo-Gallery
+    src/gallery/       your images (auto-loaded by src/gallery.js)
+    src/site.js        your info + captions
+    src/App.jsx        style switcher + STYLES list
+    src/components/    Grid, Showcase, Lightbox, RibbonGallery, tilt-carousel
