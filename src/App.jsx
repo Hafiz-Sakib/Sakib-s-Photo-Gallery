@@ -35,7 +35,41 @@ function PrismAll({ items }) {
 const SPATIAL_MAX = 64;
 function SpatialAll({ items }) {
   const tunnel = useMemo(() => items.slice(0, SPATIAL_MAX).map((i) => ({ src: i.src, alt: i.alt, href: i.full || i.src })), [items]);
-  return <SpatialGallery className="h-[78dvh] min-h-[420px]" items={tunnel} radius={4.2} fog={1} linkTarget="_blank" />;
+  return (
+    <SpatialGallery
+      className="h-[78dvh] min-h-[420px]" // Gallery box size/shape (Tailwind classes)
+      items={tunnel} // Photos: [{ src, alt, href }]
+      // ─── Auto Movement ─────────────────────
+      speed={1.4} // Auto speed: 0 (still) → ~3, higher = faster
+      autoMove={true} // Auto move: true / false
+      // ─── Scroll ────────────────────────────
+      scrollSpeed={2.1} // Scroll sensitivity: 0.5 → 4, higher = faster
+      captureScroll={true} // Capture scroll: true = gallery takes wheel scroll, false = page scrolls normally
+      followPageScroll={true} // Follow page scroll: true = moves as page scrolls, false = ignores page scroll
+      // ─── Spiral ────────────────────────────
+      spiral={true} // Spiral: true / false
+      twist={0.3} // Twist: 0 (none) → 1 (maximum)
+      // ─── Facing ────────────────────────────
+      facing="funnel" // Facing: "front" (flat to camera) / "funnel" (leans inward)
+      funnel={0.78} // Funnel lean: 0 (none) → 1 (maximum)
+      // ─── Layout ────────────────────────────
+      count={124} // Planes: 8 – 160 (more = denser tunnel, heavier on GPU)
+      radius={4.1} // Tunnel radius: 2 → 8, higher = wider
+      core={0.8} // Hollow core: 0 → 0.95, higher = bigger empty center
+      spacing={0.2} // Depth spacing: 0.1 → 1, higher = more distance between planes
+      size={1.45} // Plane size: 0.5 → 3, higher = larger images
+      // ─── Appearance ────────────────────────
+      roll={0.0} // Roll: 0 = no rotation, higher = more rotation
+      corner={0.22} // Corner radius: 0 (square) → 0.5 (round)
+      parallax={0.5} // Parallax: 0 (none) → 1 (maximum)
+      fog={0.5} // Fog: 0 (none) → 1 (maximum fade)
+      // ─── Interaction ───────────────────────
+      drag={true} // Drag to travel: true / false
+      caption={false} // Caption: true / false (show alt text)
+      // ─── Links ─────────────────────────────
+      linkTarget="_blank" // Link target: "_blank" (new tab) / "_self" (same tab)
+    />
+  );
 }
 
 // Card sizes follow the width of the gallery box (the page is at most 1152px wide), so pictures never look small inside it.
